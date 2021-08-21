@@ -20,6 +20,13 @@ begin
 
   while running do
   begin
+    (* Límites *)
+    if player_x > X_SIZE  then player_x := X_SIZE;
+    if player_x < 1	  then player_x := 1;
+    if player_y > Y_SIZE  then player_y := Y_SIZE;
+    if player_y < 1	  then player_y := 1;
+
+    (* Gráficos *)
     for y_index := 1 to Y_SIZE do
     begin
       for x_index := 1 to X_SIZE do
@@ -32,6 +39,7 @@ begin
 
       writeln('Move with WASD. Exit with ESC.');
 
+      (* Input *)
       keystroke := readkey();
       case keystroke of
 	'w': player_y -= 1;
