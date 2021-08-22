@@ -7,9 +7,44 @@ const
   Y_SIZE = 8;
 
 var 
-  x_index, y_index, player_x, player_y: integer;
-  keystroke: char;
+  player_x, player_y: integer;
   running: boolean;
+
+procedure manage_graphics;
+var
+  x_index, y_index: integer;
+begin
+  (* Límites *)
+  if player_x > X_SIZE	then player_x := X_SIZE;
+  if player_x < 1	then player_x := 1;
+  if player_y > Y_SIZE  then player_y := Y_SIZE;
+  if player_y < 1	then player_y := 1;
+
+  (* Render *)
+  for y_index := 1 to Y_SIZE do
+  begin
+    for x_index := 1 to X_SIZE do
+      if (x_index = player_x) and (y_index = player_y) then
+	write('o ')
+      else
+	write('- ');
+    writeln()
+  end;
+end;
+
+procedure manage_input;
+var
+  keystroke: char;
+begin
+  keystroke := readkey();
+  case keystroke of
+    'w': player_y -= 1;
+    's': player_y += 1;
+    'd': player_x += 1;
+    'a': player_x -= 1;
+    #27: running := false; (* #27 = ESC *)
+  end;
+end;
 
 begin
   player_x := X_SIZE div 2;
@@ -20,35 +55,12 @@ begin
 
   while running do
   begin
-    (* Límites *)
-    if player_x > X_SIZE  then player_x := X_SIZE;
-    if player_x < 1	  then player_x := 1;
-    if player_y > Y_SIZE  then player_y := Y_SIZE;
-    if player_y < 1	  then player_y := 1;
+    manage_graphics();
 
-    (* Gráficos *)
-    for y_index := 1 to Y_SIZE do
-    begin
-      for x_index := 1 to X_SIZE do
-	if (x_index = player_x) and (y_index = player_y) then
-	  write('o ')
-	else
-	  write('- ');
-      writeln()
-    end;
+    manage_input();
 
-      writeln('Move with WASD. Exit with ESC.');
+    writeln('Move with WASD. Exit with ESC.');
 
-      (* Input *)
-      keystroke := readkey();
-      case keystroke of
-	'w': player_y -= 1;
-	's': player_y += 1;
-	'd': player_x += 1;
-	'a': player_x -= 1;
-	#27: running := false; (* #27 = ESC *)
-      end;
-
-      clrscr();
-    end;
+    clrscr();
+  end;
 end.
