@@ -1,4 +1,4 @@
-program mijuego;
+program spacewar;
 
 uses crt;
 
