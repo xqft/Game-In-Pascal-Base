@@ -1,6 +1,7 @@
 program spacewar;
 
-uses crt;
+uses 
+  crt, math_util;
 
 const
   X_SIZE = 14;
@@ -136,15 +137,13 @@ begin
 
   running := true;
 
-  clrscr();
-
   while running do
   begin
     manage_input();
     manage_projectiles();
     manage_graphics();
-    delay(16); (* 1/60 en milisegundos, simula un poco menos de 60 fps *)
+    writeln('Move with WASD. Exit with ESC. Shoot with SPACE!');
 
-    writeln('Move with WASD. Exit with ESC.'); (* FIXME: No aparece este mensaje *)
+    delay(16); (* 1/60 en milisegundos, simula un poco menos de 60 fps *)
   end;
 end.
