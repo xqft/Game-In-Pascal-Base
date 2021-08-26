@@ -1,2 +1,5 @@
 miJuego
 miJuego.o
+
+math_util.o
+math_util.ppu
