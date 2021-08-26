@@ -62,7 +62,7 @@ begin
 	container[i].vel := container[last_element_index].vel;
 	last_element_index -= 1;
 	(* Se elimina el proyectil, copiando el último elemento al índice del
-	eliminado y entonces reduciendo last_element_index *)
+	eliminado y luego reduciendo last_element_index *)
       end;
     end;
 end;
