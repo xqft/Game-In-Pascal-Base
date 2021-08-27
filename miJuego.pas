@@ -12,7 +12,7 @@ const
 type
   TProjectile = record
     pos: TVector;
-    vel: real;
+    vel: real; (* La velocidad es solo en el eje vertical *)
   end;
 
   TProjectileContainer = record
