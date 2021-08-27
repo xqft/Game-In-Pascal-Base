@@ -11,8 +11,8 @@ const
 
 type
   TProjectile = record
-    position: TVector;
-    vel: real (* La velocidad es solo en el eje vertical *)
+    pos: TVector;
+    vel: real;
   end;
 
   TProjectileContainer = record
@@ -27,7 +27,7 @@ type
     position: TVector
   end;
 
-var 
+var
   player: TShip;
   running: boolean;
   projectiles: TProjectileContainer;
@@ -89,11 +89,11 @@ begin
     begin
       has_projectile := false;
       with projectiles do
-	if last_element_index <> -1 then 
+	if last_element_index <> -1 then
 	begin
 	  for i := 0 to last_element_index do
 	    with container[i].position do
-	      if (x_index = round(x)) and (y_index = round(y)) then 
+	      if (x_index = round(x)) and (y_index = round(y)) then
 	      begin
 		write ('| ');
 		has_projectile := true (* Esta celda tiene un proyectil *)
@@ -102,13 +102,13 @@ begin
 	  if not has_projectile then
 	    if (x_index = player.position.x) and (y_index = player.position.y) then
 	      write('o ')
-	    else 
+	    else
 	      write('- ');
 
 	end else (* No hay proyectiles *)
 	  if (x_index = player.position.x) and (y_index = player.position.y) then
 	    write('o ')
-	  else 
+	  else
 	    write('- ');
     end;
     writeln()
