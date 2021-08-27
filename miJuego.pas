@@ -24,7 +24,7 @@ type
   end;
 
   TShip = record
-    position: TVector
+    pos: TVector
   end;
 
 var
@@ -39,8 +39,8 @@ begin
     projectiles.last_element_index += 1;
     with container[last_element_index] do
     begin
-      position := ship.position;
-      vel := velocity
+      pos := ship.pos;
+      vel := velocity;
     end;
   end;
 end;
@@ -53,12 +53,12 @@ begin
     if last_element_index <> -1 then (* No hay proyectiles *)
     for i := 0 to last_element_index do
     begin
-      container[i].position.y += container[i].vel * DT;
+      container[i].pos.y += container[i].vel * DT;
 
-      if (container[i].position.y > Y_SIZE) or (container[i].position.y < 1) then (* Límites *)
+      if (container[i].pos.y > Y_SIZE) or (container[i].pos.y < 1) then (* Límites *)
       begin
-	container[i].position.x := container[last_element_index].position.x;
-	container[i].position.y := container[last_element_index].position.y;
+	container[i].pos.x := container[last_element_index].pos.x;
+	container[i].pos.y := container[last_element_index].pos.y;
 	container[i].vel := container[last_element_index].vel;
 	last_element_index -= 1
 	(* Se elimina el proyectil, copiando el último elemento al índice del
@@ -73,7 +73,7 @@ var
   has_projectile: boolean;
 begin
   (* Límites del jugador *)
-  with player.position do
+  with player.pos do
   begin
     if x > X_SIZE then x := X_SIZE;
     if x < 1	  then x := 1;
@@ -92,7 +92,7 @@ begin
 	if last_element_index <> -1 then
 	begin
 	  for i := 0 to last_element_index do
-	    with container[i].position do
+	    with container[i].pos do
 	      if (x_index = round(x)) and (y_index = round(y)) then
 	      begin
 		write ('| ');
@@ -100,13 +100,13 @@ begin
 	      end;
 
 	  if not has_projectile then
-	    if (x_index = player.position.x) and (y_index = player.position.y) then
+	    if (x_index = player.pos.x) and (y_index = player.pos.y) then
 	      write('o ')
 	    else
 	      write('- ');
 
 	end else (* No hay proyectiles *)
-	  if (x_index = player.position.x) and (y_index = player.position.y) then
+	  if (x_index = player.pos.x) and (y_index = player.pos.y) then
 	    write('o ')
 	  else
 	    write('- ');
@@ -122,18 +122,18 @@ begin
   if keypressed() then (* Para que el loop no se detenga hasta obtener un input *)
   keystroke := readkey();
   case keystroke of
-    'w': player.position.y -= 1;
-    's': player.position.y += 1;
-    'd': player.position.x += 1;
-    'a': player.position.x -= 1;
+    'w': player.pos.y -= 1;
+    's': player.pos.y += 1;
+    'd': player.pos.x += 1;
+    'a': player.pos.x -= 1;
     #27: running := false;  (* #27 = ESC *)
     #32: shoot(player, -8); (* #32 = SPACEBAR *)
   end;
 end;
 
 begin
-  player.position.x := X_SIZE div 2;
-  player.position.y := Y_SIZE div 2;
+  player.pos.x := X_SIZE div 2;
+  player.pos.y := Y_SIZE div 2;
 
   projectiles.last_element_index := -1; (* Está inicialmente vacío *)
 
