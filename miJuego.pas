@@ -144,7 +144,9 @@ begin
     manage_input();
     manage_projectiles();
     manage_graphics();
-    writeln('Move with WASD. Exit with ESC. Shoot with SPACE!');
+    writeln('Presiona: ESC para terminar.');
+    writeln('          WASD para moverte.');
+    writeln('          ESPACIO para disparar!');
 
     delay(16) (* 1/60 en milisegundos, simula un poco menos de 60 fps *)
   end;
