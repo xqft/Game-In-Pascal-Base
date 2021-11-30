@@ -7,111 +7,143 @@ const
   X_SIZE = 14;
   Y_SIZE = 8;
   MAX_PROJECTILES = 99;
-  DT = 0.016; (* Pequeña fracción de tiempo, en segundos (1/60) *)
+  DT = 0.016; { A small fraction of time, in seconds (1/60) }
 
 type
-  TProjectile = record
+  TWorldYRange = 0..Y_SIZE-1;
+  TWorldXRange = 0..X_SIZE-1;
+
+  { A matrix of chars that will be rendered on screen, where an empty entry represents
+    an empty space }
+  TWorldMatrix = array [0..Y_SIZE - 1, 0..X_SIZE - 1] of char;
+
+  TEntityType = ( play, projectile );
+
+  TEntity = record
+    fig: char; { The char that graphically represents this entity }
     pos: TVector;
-    vel: real; (* La velocidad es solo en el eje vertical *)
+    case etype: TEntityType of
+      play : ();
+      projectile : ( vel: real ); { Velocity on the Y (vertical) axis }
   end;
 
-  TProjectileContainer = record
-    container: array [0..MAX_PROJECTILES] of TProjectile;
-    last_element_index: integer
-    (* Cada elemento es un proyectil. last_element_index indica el índice del último
-    proyectil, será usado para loopear desde 0 hasta este valor y pasar por cada 
-    proyectil. *)
-  end;
-
-  TShip = record
-    pos: TVector
+  { Variant record which uses bounded arrays to store entities }
+  TEntityContainer = record
+    case etype : TEntityType of
+    projectile : (
+      bound: -1..MAX_PROJECTILES;
+      container: array [0..MAX_PROJECTILES] of TEntity
+    );
   end;
 
 var
-  player: TShip;
+  world: TWorldMatrix;
+  player: TEntity;
+  projectiles: TEntityContainer;
   running: boolean;
-  projectiles: TProjectileContainer;
 
-procedure shoot(ship: TShip; velocity: real); (* velocity está en celdas por segundo aprox. *)
+procedure shoot(entity: TEntity; velocity: real; var projectiles: TEntityContainer); (* velocity está en celdas por segundo aprox. *)
 begin
   with projectiles do
   begin
-    projectiles.last_element_index += 1;
-    with container[last_element_index] do
-    begin
-      pos := ship.pos;
-      vel := velocity;
-    end;
+    case etype of
+      projectile:
+      begin
+	bound += 1;
+	with container[bound] do
+	begin
+	  fig := '|';
+	  pos := entity.pos;
+	  vel := velocity;
+	end;
+      end;
+    end; { case }
   end;
 end;
 
-procedure manage_projectiles;
+procedure manage_entities(var entities: TEntityContainer);
 var
   i: integer;
 begin
-  with projectiles do
-    if last_element_index <> -1 then (* No hay proyectiles *)
-    for i := 0 to last_element_index do
-    begin
-      container[i].pos.y += container[i].vel * DT;
+  with entities do
+    case etype of
+      projectile: begin
+	if bound <> -1 then { If it's not empty, then }
+	for i := 0 to bound do
+	begin
+	  { Update position }
+	  container[i].pos.y += container[i].vel * DT;
 
-      if (container[i].pos.y > Y_SIZE) or (container[i].pos.y < 1) then (* Límites *)
+	  { World limits }
+	  if (container[i].pos.y > Y_SIZE) or (container[i].pos.y < 1) then
+	  begin
+	    container[i].pos.x := container[bound].pos.x;
+	    container[i].pos.y := container[bound].pos.y;
+	    container[i].vel := container[bound].vel;
+	    bound -= 1
+	    { The projectile is deleted }
+	    { TODO: Generalize to a delete() method }
+	  end;
+	end;
+      end; { projectile case }
+    end; { case }
+end;
+
+function empty_world(fig : char) : TWorldMatrix;
+var
+  y_index: TWorldYRange;
+  x_index: TWorldXRange;
+begin
+  for y_index in TWorldYRange do
+    for x_index in TWorldXRange do
+      empty_world[y_index, x_index] := fig;
+end;
+
+procedure add_to_world(var world : TWorldMatrix; entities: TEntityContainer);
+var
+  i: integer;
+begin
+  with entities do
+    case etype of
+      projectile:
+	if bound <> -1 then { If it's not empty, then }
+	  for i := 0 to bound do
+	    with container[i] do
+	      world[round(pos.y), round(pos.x)] := fig;
+    end;
+end;
+
+{ The player's entity is excluded from the previous procedures and has its own, as it's
+a special kind of entity }
+procedure manage_player(var player : TEntity; var world : TWorldMatrix);
+begin
+  with player do
+    case etype of
+    play:
       begin
-	container[i].pos.x := container[last_element_index].pos.x;
-	container[i].pos.y := container[last_element_index].pos.y;
-	container[i].vel := container[last_element_index].vel;
-	last_element_index -= 1
-	(* Se elimina el proyectil, copiando el último elemento al índice del
-	eliminado y luego reduciendo last_element_index *)
+	{ World limits }
+	if pos.x >= X_SIZE-1  then pos.x := X_SIZE-1;
+	if pos.x <= 0	      then pos.x := 0;
+	if pos.y >= Y_SIZE-1  then pos.y := Y_SIZE-1;
+	if pos.y <= 0	      then pos.y := 0;
+
+	world[round(pos.y), round(pos.x)] := fig;
       end;
     end;
 end;
 
-procedure manage_graphics;
+procedure render_graphics(world : TWorldMatrix);
 var
-  x_index, y_index, i: integer;
-  has_projectile: boolean;
+  y_index: TWorldYRange;
+  x_index: TWorldXRange;
 begin
-  (* Límites del jugador *)
-  with player.pos do
-  begin
-    if x > X_SIZE then x := X_SIZE;
-    if x < 1	  then x := 1;
-    if y > Y_SIZE then y := Y_SIZE;
-    if y < 1	  then y := 1
-  end;
-
-  (* Render *)
   clrscr();
-  for y_index := 1 to Y_SIZE do
+
+  for y_index in TWorldYRange do
   begin
-    for x_index := 1 to X_SIZE do
-    begin
-      has_projectile := false;
-      with projectiles do
-	if last_element_index <> -1 then
-	begin
-	  for i := 0 to last_element_index do
-	    with container[i].pos do
-	      if (x_index = round(x)) and (y_index = round(y)) then
-	      begin
-		write ('| ');
-		has_projectile := true (* Esta celda tiene un proyectil *)
-	      end;
-
-	  if not has_projectile then
-	    if (x_index = player.pos.x) and (y_index = player.pos.y) then
-	      write('o ')
-	    else
-	      write('- ');
-
-	end else (* No hay proyectiles *)
-	  if (x_index = player.pos.x) and (y_index = player.pos.y) then
-	    write('o ')
-	  else
-	    write('- ');
-    end;
-    writeln()
+    for x_index in TWorldXRange do
+      write(world[y_index, x_index], ' ');
+    writeln();
   end;
 end;
 
@@ -119,35 +151,48 @@ procedure manage_input;
 var
   keystroke: char;
 begin
-  if keypressed() then (* Para que el loop no se detenga hasta obtener un input *)
+  if keypressed() then { So the loop doesn't stop until receiving input }
   keystroke := readkey();
   case keystroke of
     'w': player.pos.y -= 1;
     's': player.pos.y += 1;
     'd': player.pos.x += 1;
     'a': player.pos.x -= 1;
-    #27: running := false;  (* #27 = ESC *)
-    #32: shoot(player, -8); (* #32 = SPACEBAR *)
+    #27: running := false;		  { #27 = ESC }
+    #32: shoot(player, -8, projectiles);  { #32 = SPACEBAR }
   end;
 end;
 
 begin
-  player.pos.x := X_SIZE div 2;
-  player.pos.y := Y_SIZE div 2;
+  world := empty_world('-');
 
-  projectiles.last_element_index := -1; (* Está inicialmente vacío *)
+  player.etype	:= play;
+  player.fig	:= 'o';
+  player.pos.x	:= X_SIZE div 2;
+  player.pos.y	:= Y_SIZE div 2;
+
+  projectiles.etype := projectile;
+  projectiles.bound := -1; { Initially empty }
 
   running := true;
 
   while running do
   begin
     manage_input();
-    manage_projectiles();
-    manage_graphics();
-    writeln('Presiona: ESC para terminar.');
-    writeln('          WASD para moverte.');
-    writeln('          ESPACIO para disparar!');
 
-    delay(16) (* 1/60 en milisegundos, simula un poco menos de 60 fps *)
+    manage_entities(projectiles);
+
+    add_to_world(world, projectiles);
+
+    manage_player(player, world);
+
+    render_graphics(world);
+    world := empty_world('-');
+
+    writeln('Press: ESC to quit.');
+    writeln('       WASD to move.');
+    writeln('       SPACEBAR to shoot!');
+
+    delay(16) { 1/60 in milliseconds, making the game run at a little less than 60 fps }
   end;
 end.
